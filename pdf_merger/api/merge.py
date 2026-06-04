@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 from frappe.utils import cstr
 from pypdf import PdfWriter
+from pypdf.errors import PyPdfError
 
 
 @frappe.whitelist()
@@ -86,24 +87,36 @@ def _normalize_pdf_filename(pdf_name: str) -> str:
 
 def _merge_file_contents(file_names: list[str]) -> bytes:
 	merger = PdfWriter()
+	current_file_label = None
 
-	for file_name in file_names:
-		file_doc = frappe.get_doc("File", file_name)
-		file_doc.check_permission("read")
+	try:
+		for file_name in file_names:
+			file_doc = frappe.get_doc("File", file_name)
+			file_doc.check_permission("read")
 
-		if file_doc.file_type != "PDF":
+			if file_doc.file_type != "PDF":
+				frappe.throw(
+					_("File {0} is not a PDF.").format(file_doc.file_name or file_name),
+					frappe.ValidationError,
+				)
+
+			content = file_doc.get_content()
+			if isinstance(content, str):
+				content = content.encode("latin-1")
+
+			current_file_label = file_doc.file_name or file_name
+			merger.append(io.BytesIO(content))
+
+		current_file_label = None
+		out = io.BytesIO()
+		merger.write(out)
+		return out.getvalue()
+	except PyPdfError as e:
+		if current_file_label:
 			frappe.throw(
-				_("File {0} is not a PDF.").format(file_doc.file_name or file_name),
+				_("Could not read PDF {0}: {1}").format(current_file_label, e),
 				frappe.ValidationError,
 			)
-
-		content = file_doc.get_content()
-		if isinstance(content, str):
-			content = content.encode("latin-1")
-
-		merger.append(io.BytesIO(content))
-
-	out = io.BytesIO()
-	merger.write(out)
-	merger.close()
-	return out.getvalue()
+		frappe.throw(_("Could not merge PDFs: {0}").format(e), frappe.ValidationError)
+	finally:
+		merger.close()

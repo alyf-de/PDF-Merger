@@ -2,12 +2,13 @@
 # See license.txt
 
 import io
+from unittest.mock import MagicMock, patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from pypdf import PdfWriter
 
-from pdf_merger.api.merge import get_default_pdf_files, merge_pdfs
+from pdf_merger.api.merge import _merge_file_contents, get_default_pdf_files, merge_pdfs
 from pdf_merger.settings import clear_enabled_doctypes_cache, get_enabled_doctypes
 
 
@@ -59,6 +60,18 @@ class TestPDFMerger(FrappeTestCase):
 		file_names = {row["file"] for row in rows}
 		self.assertIn(self.pdf_file.name, file_names)
 		self.assertNotIn(self.image_file.name, file_names)
+
+	def test_merge_file_contents_rejects_corrupt_pdf(self):
+		file_doc = MagicMock()
+		file_doc.file_type = "PDF"
+		file_doc.file_name = "corrupt.pdf"
+		file_doc.get_content.return_value = b"%PDF-truncated"
+
+		with patch("pdf_merger.api.merge.frappe.get_doc", return_value=file_doc):
+			with self.assertRaises(frappe.ValidationError) as context:
+				_merge_file_contents(["corrupt-file"])
+
+		self.assertIn("corrupt.pdf", str(context.exception))
 
 	def test_merge_pdfs_rejects_non_pdf_file(self):
 		self.assertRaises(
