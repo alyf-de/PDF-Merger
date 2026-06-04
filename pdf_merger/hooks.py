@@ -26,7 +26,8 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/pdf_merger/css/pdf_merger.css"
-# app_include_js = "/assets/pdf_merger/js/pdf_merger.js"
+app_include_js = "/assets/pdf_merger/js/pdf_merger.js"
+boot_session = "pdf_merger.boot.boot_session"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/pdf_merger/css/pdf_merger.css"
