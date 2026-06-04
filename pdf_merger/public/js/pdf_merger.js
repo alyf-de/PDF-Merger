@@ -21,6 +21,7 @@ function register_pdf_merger_forms() {
 function show_pdf_merge_dialog(frm) {
 	const dialog = new frappe.ui.Dialog({
 		title: MERGE_PDFS_LABEL,
+		size: "large",
 		fields: [
 			{
 				label: __("PDFs"),
@@ -35,6 +36,7 @@ function show_pdf_merge_dialog(frm) {
 						options: "File",
 						label: __("File"),
 						reqd: 1,
+						columns: 3,
 						in_list_view: 1,
 						get_query() {
 							return {
@@ -62,6 +64,7 @@ function show_pdf_merge_dialog(frm) {
 						fieldname: "file_name",
 						label: __("File Name"),
 						read_only: 1,
+						columns: 7,
 						in_list_view: 1,
 					},
 				],
