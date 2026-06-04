@@ -117,9 +117,11 @@ function show_pdf_merge_dialog(frm) {
 				freeze: true,
 				freeze_message: __("Merging PDFs..."),
 				btn: dialog.get_primary_btn(),
-				callback() {
+				callback(r) {
 					dialog.hide();
-					frm.refresh();
+					if (r.message) {
+						frm.attachments.attachment_uploaded(r.message);
+					}
 				},
 			});
 		},
