@@ -69,12 +69,25 @@ class TestPDFMerger(FrappeTestCase):
 			[self.image_file.name],
 		)
 
-	def test_merge_pdfs_sets_download_response(self):
-		merge_pdfs(self.todo.doctype, self.todo.name, [self.pdf_file.name])
+	def test_merge_pdfs_attaches_merged_file_to_document(self):
+		result = merge_pdfs(self.todo.doctype, self.todo.name, [self.pdf_file.name])
 
-		self.assertEqual(frappe.local.response.type, "download")
-		self.assertTrue(frappe.local.response.filecontent)
-		self.assertTrue(frappe.local.response.filename.endswith("-merged.pdf"))
+		self.assertTrue(result["file_url"])
+		self.assertTrue(result["file_name"].endswith("-merged.pdf"))
+		self.assertTrue(result["file_url"].startswith("/private/files/"))
+
+		file_doc = frappe.get_doc("File", result["name"])
+		self.assertEqual(file_doc.is_private, 1)
+
+		attached_files = frappe.get_all(
+			"File",
+			filters={
+				"attached_to_doctype": self.todo.doctype,
+				"attached_to_name": self.todo.name,
+				"file_name": result["file_name"],
+			},
+		)
+		self.assertEqual(len(attached_files), 1)
 
 
 def _create_attached_file(

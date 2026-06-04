@@ -15,19 +15,37 @@ def get_default_pdf_files(doctype: str, docname: str) -> list[dict[str, str]]:
 
 
 @frappe.whitelist()
-def merge_pdfs(doctype: str, docname: str, files: str | list[str]) -> None:
+def merge_pdfs(doctype: str, docname: str, files: str | list[str]) -> dict[str, str]:
 	doc = frappe.get_doc(doctype, docname)
-	doc.check_permission("read")
+	doc.check_permission("write")
 
 	file_names = _parse_file_names(files)
 	if not file_names:
 		frappe.throw(_("Select at least one PDF to merge."))
 
 	merged_pdf = _merge_file_contents(file_names)
+	return _attach_merged_pdf(doctype, docname, merged_pdf)
 
-	frappe.local.response.filename = f"{frappe.scrub(doctype)}-{frappe.scrub(docname)}-merged.pdf"
-	frappe.local.response.filecontent = merged_pdf
-	frappe.local.response.type = "download"
+
+def _attach_merged_pdf(doctype: str, docname: str, content: bytes) -> dict[str, str]:
+	output_filename = f"{frappe.scrub(doctype)}-{frappe.scrub(docname)}-merged.pdf"
+	file_doc = frappe.get_doc(
+		{
+			"doctype": "File",
+			"file_name": output_filename,
+			"attached_to_doctype": doctype,
+			"attached_to_name": docname,
+			"is_private": 1,
+			"content": content,
+		}
+	)
+	file_doc.insert()
+
+	return {
+		"name": file_doc.name,
+		"file_name": file_doc.file_name,
+		"file_url": file_doc.file_url,
+	}
 
 
 def _get_attached_pdf_rows(doctype: str, docname: str) -> list[dict[str, str]]:

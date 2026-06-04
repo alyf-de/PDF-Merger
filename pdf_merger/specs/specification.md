@@ -27,7 +27,8 @@ The dialog's child table shall be pre-filled with default PDFs.
 These are the PDFs that are currently attached to the document.
 
 ### Submitting the dialog
-When the dialog is submitted, the PDFs are merged. The newly created PDF is attached to the respective document.
+When the dialog is submitted, the PDFs are merged.
+The newly created PDF (private!) is attached to the respective document.
 
 
 # TODO

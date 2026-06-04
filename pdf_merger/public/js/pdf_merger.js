@@ -80,13 +80,24 @@ function show_pdf_merge_dialog(frm) {
 				return;
 			}
 
-			open_url_post(frappe.request.url, {
-				cmd: "pdf_merger.api.merge.merge_pdfs",
-				doctype: frm.doctype,
-				docname: frm.docname,
-				files: JSON.stringify(files),
+			frappe.call({
+				method: "pdf_merger.api.merge.merge_pdfs",
+				args: {
+					doctype: frm.doctype,
+					docname: frm.docname,
+					files: JSON.stringify(files),
+				},
+				freeze: true,
+				freeze_message: __("Merging PDFs..."),
+				btn: dialog.get_primary_btn(),
+				callback() {
+					dialog.hide();
+
+					if (frm.attachments) {
+						frm.attachments.refresh();
+					}
+				},
 			});
-			dialog.hide();
 		},
 	});
 
