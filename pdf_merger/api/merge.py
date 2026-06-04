@@ -1,5 +1,6 @@
 import io
 import json
+import os
 
 import frappe
 from frappe import _
@@ -15,7 +16,9 @@ def get_default_pdf_files(doctype: str, docname: str) -> list[dict[str, str]]:
 
 
 @frappe.whitelist()
-def merge_pdfs(doctype: str, docname: str, files: str | list[str]) -> dict[str, str]:
+def merge_pdfs(
+	doctype: str, docname: str, pdf_name: str, files: str | list[str]
+) -> dict[str, str]:
 	doc = frappe.get_doc(doctype, docname)
 	doc.check_permission("write")
 
@@ -23,12 +26,14 @@ def merge_pdfs(doctype: str, docname: str, files: str | list[str]) -> dict[str, 
 	if not file_names:
 		frappe.throw(_("Select at least one PDF to merge."))
 
+	output_filename = _normalize_pdf_filename(pdf_name)
 	merged_pdf = _merge_file_contents(file_names)
-	return _attach_merged_pdf(doctype, docname, merged_pdf)
+	return _attach_merged_pdf(doctype, docname, merged_pdf, output_filename)
 
 
-def _attach_merged_pdf(doctype: str, docname: str, content: bytes) -> dict[str, str]:
-	output_filename = f"{frappe.scrub(doctype)}-{frappe.scrub(docname)}-merged.pdf"
+def _attach_merged_pdf(
+	doctype: str, docname: str, content: bytes, output_filename: str
+) -> dict[str, str]:
 	file_doc = frappe.get_doc(
 		{
 			"doctype": "File",
@@ -66,6 +71,17 @@ def _parse_file_names(files: str | list[str]) -> list[str]:
 	if isinstance(files, str):
 		files = json.loads(files)
 	return [name for name in files if name]
+
+
+def _normalize_pdf_filename(pdf_name: str) -> str:
+	filename = os.path.basename(cstr(pdf_name).strip())
+	if not filename:
+		frappe.throw(_("PDF Name is required."), frappe.ValidationError)
+
+	if not filename.lower().endswith(".pdf"):
+		filename = f"{filename}.pdf"
+
+	return filename
 
 
 def _merge_file_contents(file_names: list[str]) -> bytes:

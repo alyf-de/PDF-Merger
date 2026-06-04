@@ -52,6 +52,13 @@ function show_pdf_merge_dialog(frm) {
 		size: "large",
 		fields: [
 			{
+				label: __("PDF Name"),
+				fieldname: "pdf_name",
+				fieldtype: "Data",
+				reqd: 1,
+				default: frm.docname,
+			},
+			{
 				label: __("PDFs"),
 				fieldname: "pdf_files",
 				fieldtype: "Table",
@@ -90,7 +97,8 @@ function show_pdf_merge_dialog(frm) {
 		],
 		primary_action_label: __("Merge"),
 		primary_action() {
-			const rows = dialog.get_values().pdf_files || [];
+			const values = dialog.get_values();
+			const rows = values.pdf_files || [];
 			const files = rows.map((row) => row.file).filter(Boolean);
 
 			if (!files.length) {
@@ -103,6 +111,7 @@ function show_pdf_merge_dialog(frm) {
 				args: {
 					doctype: frm.doctype,
 					docname: frm.docname,
+					pdf_name: values.pdf_name,
 					files: JSON.stringify(files),
 				},
 				freeze: true,

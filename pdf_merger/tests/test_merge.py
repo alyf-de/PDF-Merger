@@ -66,14 +66,40 @@ class TestPDFMerger(FrappeTestCase):
 			merge_pdfs,
 			self.todo.doctype,
 			self.todo.name,
+			self.todo.name,
 			[self.image_file.name],
 		)
 
+	def test_merge_pdfs_rejects_empty_pdf_name(self):
+		self.assertRaises(
+			frappe.ValidationError,
+			merge_pdfs,
+			self.todo.doctype,
+			self.todo.name,
+			"   ",
+			[self.pdf_file.name],
+		)
+
+	def test_merge_pdfs_keeps_pdf_extension(self):
+		result = merge_pdfs(
+			self.todo.doctype,
+			self.todo.name,
+			"report.pdf",
+			[self.pdf_file.name],
+		)
+
+		self.assertEqual(result["file_name"], "report.pdf")
+
 	def test_merge_pdfs_attaches_merged_file_to_document(self):
-		result = merge_pdfs(self.todo.doctype, self.todo.name, [self.pdf_file.name])
+		result = merge_pdfs(
+			self.todo.doctype,
+			self.todo.name,
+			self.todo.name,
+			[self.pdf_file.name],
+		)
 
 		self.assertTrue(result["file_url"])
-		self.assertTrue(result["file_name"].endswith("-merged.pdf"))
+		self.assertEqual(result["file_name"], f"{self.todo.name}.pdf")
 		self.assertTrue(result["file_url"].startswith("/private/files/"))
 
 		file_doc = frappe.get_doc("File", result["name"])
