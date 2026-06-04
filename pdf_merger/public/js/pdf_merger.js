@@ -110,10 +110,7 @@ function show_pdf_merge_dialog(frm) {
 				btn: dialog.get_primary_btn(),
 				callback() {
 					dialog.hide();
-
-					if (frm.attachments) {
-						frm.attachments.refresh();
-					}
+					frm.refresh();
 				},
 			});
 		},
