@@ -1,5 +1,33 @@
 const MERGE_PDFS_LABEL = __("Merge PDFs");
 
+function refresh_pdf_files_grid_row(grid, doc) {
+	const grid_row = grid.grid_rows?.find(
+		(row) => row.doc === doc || row.doc?.name === doc?.name
+	);
+
+	if (grid_row) {
+		grid_row.refresh();
+	} else {
+		grid.refresh();
+	}
+}
+
+function set_row_file_name_from_file(doc, dialog) {
+	const grid = dialog.fields_dict.pdf_files.grid;
+	const file_id = doc.file;
+
+	if (!file_id) {
+		doc.file_name = "";
+		refresh_pdf_files_grid_row(grid, doc);
+		return;
+	}
+
+	frappe.db.get_value("File", file_id, "file_name", (data) => {
+		doc.file_name = data?.file_name || "";
+		refresh_pdf_files_grid_row(grid, doc);
+	});
+}
+
 function register_pdf_merger_forms() {
 	(frappe.boot.pdf_merger_enabled_doctypes || []).forEach((doctype) => {
 		frappe.ui.form.on(doctype, {
@@ -46,17 +74,7 @@ function show_pdf_merge_dialog(frm) {
 							};
 						},
 						onchange() {
-							const file_id = this.doc.file;
-							if (!file_id) {
-								this.doc.file_name = "";
-								dialog.fields_dict.pdf_files.grid.refresh();
-								return;
-							}
-
-							frappe.db.get_value("File", file_id, "file_name", (r) => {
-								this.doc.file_name = r.message.file_name;
-								dialog.fields_dict.pdf_files.grid.refresh();
-							});
+							set_row_file_name_from_file(this.doc, dialog);
 						},
 					},
 					{
